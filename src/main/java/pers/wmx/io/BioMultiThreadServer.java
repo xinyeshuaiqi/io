@@ -77,7 +77,7 @@ class SocketHandler implements Runnable {
                     e.printStackTrace();
                 }
             }
-            if (socket!=null){
+            if (socket != null){
                 try {
                     socket.close();
                 }catch (Exception e){
