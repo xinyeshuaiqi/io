@@ -27,7 +27,7 @@ public class NioServer {
 
         //基于serverSocketChannel创建一个服务端Socket
         ServerSocket socket = serverSocketChannel.socket();
-        InetSocketAddress address = new InetSocketAddress("127.0.0.1", 8888);
+        InetSocketAddress address = new InetSocketAddress("localhost", 8888);
         socket.bind(address);
 
         while(true) {
@@ -47,12 +47,13 @@ public class NioServer {
 
                     //为客户端创建一个新的channel
                     SocketChannel clientChannel = serverChannel.accept();
+                    System.out.println("新连接...");
                     clientChannel.configureBlocking(false);
                     clientChannel.register(selector, SelectionKey.OP_READ);
                 } else if (key.isReadable()) {
+                    System.out.println("数据到达...");
                     SocketChannel clientChannel = (SocketChannel)key.channel();
-                    String data = readDataFromChannel(clientChannel);
-                    System.out.println(data);
+                    readDataFromChannel(clientChannel);
                 }
 
                 keyIterator.remove();
@@ -60,26 +61,33 @@ public class NioServer {
         }
     }
 
-    private static String readDataFromChannel(SocketChannel clientChannel) throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocate(1024);
-        StringBuilder data = new StringBuilder();
+    private static void readDataFromChannel(SocketChannel clientChannel) throws IOException {
+        ByteBuffer readbuffer = ByteBuffer.allocate(1024);
 
-        while (true) {
-            buffer.clear();
-            int n = clientChannel.read(buffer);
-            if (n == -1) {
-                break;
-            }
-            buffer.flip();
-            int limit = buffer.limit();
-            char[] dst = new char[limit];
-            for (int i = 0; i < limit; i++) {
-                dst[i] = (char) buffer.get(i);
-            }
-            data.append(dst);
-            buffer.clear();
+        // 读取请求码流，返回读取到的字节数
+        int readBytes = clientChannel.read(readbuffer);
+        // 读取到字节，对字节进行编解码
+        if (readBytes > 0) {
+            // 将缓冲区当前的limit设置为position=0，用于后续对缓冲区的读取操作
+            readbuffer.flip();//读写模式反转
+
+            byte[] bytes = new byte[readbuffer.remaining()];
+            readbuffer.get(bytes);
+            String body = new String(bytes, "UTF-8");
+            System.out.println(body);
+
+            output(clientChannel, body);
         }
-        return data.toString();
+    }
+
+    private static void output(SocketChannel channel, String response) throws IOException {
+        if (response != null && response.length() > 0) {
+            byte[] bytes = response.getBytes();
+            ByteBuffer writeBuffer = ByteBuffer.allocate(bytes.length);
+            writeBuffer.put(bytes);
+            writeBuffer.flip();
+            channel.write(writeBuffer);
+        }
     }
 
 }
