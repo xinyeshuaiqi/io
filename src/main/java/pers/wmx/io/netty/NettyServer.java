@@ -33,11 +33,11 @@ public class NettyServer {
                     }
                 });
 
-        ChannelFuture channelFuture = bootstrap.bind(8888).sync();
+        ChannelFuture channelFuture = bootstrap.bind(8888).sync(); //等待服务器启动完毕，才会进入下行代码
         System.out.println("Server Starting ...");
 
         //关闭通道、线程组
-        channelFuture.channel().closeFuture().sync();
+        channelFuture.channel().closeFuture().sync(); //等待服务端关闭socket
         bossGroup.shutdownGracefully();
         workGroup.shutdownGracefully();
     }
